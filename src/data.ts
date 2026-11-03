@@ -21,64 +21,48 @@ export const turtlefetch: [string, string | ((live: Live) => string)][] = [
 	['Stack', 'TypeScript, SvelteKit, Godot, XR, C#'],
 	['Hobbies', 'game dev, homelab, 3D printing'],
 	['Plays', 'Factorio, Zelda, Spelunkey'],
-	['Packages', live => `${live.repos} (github), ${itchGames} (itch)`],
+	['Packages', live => `${live.repos} (github), ${games.length} (itch)`],
 	['Uptime', live => `${live.uptime} on GitHub`],
 	['Shell', 'zsh on Fedora'],
 	['Time', live => `${live.time}, Chicago time`],
 ];
 
-/** Games on itch.io. Update this when you ship another one. */
-export const itchGames = 19;
-
 export type Game = {
-	id: string; // /games/<id>.svg, drawn from src/images/games/<id>.webp
+	id: string; // itch.io slug. /games/<id>.svg, drawn from src/images/games/<id>.avif
 	name: string;
-	event: string;
+	event: string; // the jam it was made for, or what kind of game it is
 	place?: string;
-	tier?: 'gold' | 'silver' | 'bronze'; // colors the placement chip
+	tier?: 'gold' | 'silver' | 'bronze'; // colors the placement chip (gray without one)
 };
 
+/**
+ * Every game on itch.io, in the same order as the itch page. Any of them can
+ * go in the README; the "Packages" line counts them, so add new ones here.
+ */
 export const games: Game[] = [
-	{
-		id: 'tidal-towns',
-		name: 'Tidal Towns',
-		event: 'Ludum Dare 54',
-		place: '#11 of ~3k',
-		tier: 'bronze',
-	},
-	{
-		id: 'process',
-		name: 'Process',
-		event: "Adroit Jam '25",
-		place: '2nd place',
-		tier: 'silver',
-	},
-	{
-		id: 'poultry-pounders',
-		name: 'Poultry Pounders',
-		event: 'Made in 1 week',
-	},
-	{
-		id: 'trix',
-		name: 'Trix',
-		event: "20 Second Jam '23",
-	},
-	{
-		id: 'crater-goods',
-		name: 'Crater Goods',
-		event: "Tiger Hacks '25",
-		place: '1st place',
-		tier: 'gold',
-	},
-	{
-		id: 'infinitape',
-		name: 'Infinitape',
-		event: 'Co-op roguelike',
-	},
+	{ id: 'tidal-towns', name: 'Tidal Towns', event: 'Ludum Dare 54', place: '#11 of ~3k', tier: 'bronze' },
+	{ id: 'trix', name: 'Trix', event: "20 Second Jam '23" },
+	{ id: 'threes-a-crime', name: "Three's a Crime", event: "GMTK Jam '25" },
+	{ id: 'nanobots', name: 'Nanobots', event: 'Roguelike shooter' },
+	{ id: 'quantum-bugs', name: 'Quantum Bugs', event: "Adroit Jam '26" },
+	{ id: 'crater-goods', name: 'Crater Goods', event: "Tiger Hacks '25", place: '1st place', tier: 'gold' },
+	{ id: 'process', name: 'Process', event: "Adroit Jam '25", place: '2nd place', tier: 'silver' },
+	{ id: 'infinitape', name: 'Infinitape', event: 'Co-op roguelike' },
+	{ id: 'ball-entanglement', name: 'Ball Entanglement', event: 'Foddian SpeedJam #2' },
+	{ id: 'utterly-from-outer-space', name: 'Utterly from Outer Space', event: "GMTK Jam '23" },
+	{ id: 'vines', name: 'Vines', event: 'Puzzle Jam III' },
+	{ id: 'poultry-pounders', name: 'Poultry Pounders', event: 'Made in 1 week' },
+	{ id: 'telecade', name: 'Telecade', event: 'Arcade prototype' },
+	{ id: 'undying-torch', name: 'Undying Torch', event: 'Platformer' },
+	{ id: 'the-oblets', name: 'The Oblets', event: 'MashUp Jam 2' },
+	{ id: 'welcome-to-tiny-town-small-world', name: 'Welcome to Tiny Town, Small World', event: 'Blackthornprod #3', place: '#78 of ~1k' },
+	{ id: 'relive', name: 'Re:Live', event: 'Puzzle platformer' },
+	{ id: 'snowling', name: 'Snowling', event: 'MashUp Jam' },
+	{ id: 'carry-the-fire', name: 'Carry the Fire', event: 'Platformer' },
 ];
 
 export type Project = {
-	id: string; // /projects/<id>.svg, drawn from src/images/projects/<id>.webp unless it has art
+	id: string; // /projects/<id>.svg, drawn from src/images/projects/<id>.avif unless it has art
 	name?: string; // defaults to the id
 	blurb: string;
 	chip: [string, Color] | { stars: string; }; // { stars: 'owner/repo' } shows its live star count
@@ -128,6 +112,24 @@ export const projects: Project[] = [
 		chip: ['Godot + TS', 'cyan'],
 		art: 'phone',
 	},
+];
+
+export type Mention = {
+	name: string; // /mentions/<slug of name>.svg
+	blurb: string;
+};
+
+/** Honorable mentions: small cards with no picture, listed under the games and projects. */
+export const mentions: Mention[] = [
+	{ name: 'infinitape', blurb: 'A top-down co-op roguelike, still in the works' },
+	{ name: 'awakening', blurb: "A Link's Awakening-inspired game in Godot" },
+	{ name: 'play.ryly.dev', blurb: "Ryly's Silly Game of the Week" },
+	{ name: 'itch.io', blurb: `All ${games.length} of my games, jam entries and all` },
+	{ name: 'wolnet', blurb: 'A Wake-on-LAN server with a web UI, CLI, and API' },
+	{ name: 'world-report', blurb: 'Spatial ticketing, QA, and docs for game dev, with a REST API for Godot' },
+	{ name: 'queue', blurb: "A submission queue for playing viewers' games on stream" },
+	{ name: 'meml', blurb: 'The Mangrove Engine Markup Language' },
+	{ name: 'sketches', blurb: 'A sketching app made in Vue' },
 ];
 
 /** Link buttons, at /links/<slug>.svg. They're all drawn the same width. */

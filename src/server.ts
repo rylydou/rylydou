@@ -3,7 +3,7 @@
 
 import * as data from './data';
 import { getLive } from './live';
-import { button, gameCard, header, hero, projectCard, sections, walker } from './render';
+import { button, gameCard, header, hero, mention, projectCard, sections, walker, warm } from './render';
 import { slug } from './svg';
 
 /**
@@ -50,6 +50,11 @@ const server = Bun.serve({
 			return project ? send(req, await projectCard(project, await getLive())) : notFound();
 		},
 
+		'/mentions/:file': req => {
+			const m = pick(data.mentions, m => slug(m.name), req.params.file);
+			return m ? send(req, mention(m)) : notFound();
+		},
+
 		'/links/:file': req => {
 			const label = pick(data.links, slug, req.params.file);
 			return label ? send(req, button(label)) : notFound();
@@ -65,3 +70,9 @@ const server = Bun.serve({
 });
 
 console.log(`Serving the profile images at ${server.url}`);
+
+const start = performance.now();
+warm().then(
+	() => console.log(`Encoded every card image in ${((performance.now() - start) / 1000).toFixed(1)}s`),
+	err => console.error('Some card images failed to encode:', err),
+);

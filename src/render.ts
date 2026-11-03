@@ -3,7 +3,7 @@
 
 import { join } from 'node:path';
 import * as data from './data';
-import type { Game, Project } from './data';
+import type { Game, Mention, Project } from './data';
 import type { Live } from './live';
 import { ADV, C, Canvas, REDUCED_MOTION, SRC, SWATCHES, dataUri, len, num } from './svg';
 import { ART, PAL, editor, phone, pixels, turtle } from './sprites';
@@ -146,7 +146,7 @@ export function hero(live: Live) {
 type Header = { cmd: string; args?: string; comment?: string; };
 
 export const sections = {
-	games: { cmd: 'ls', args: '~/games', comment: `${data.itchGames} shipped, mostly at game jams` },
+	games: { cmd: 'ls', args: '~/games', comment: `${data.games.length} shipped, mostly at game jams` },
 	projects: { cmd: 'ls', args: '~/projects', comment: "tools that didn't exist yet" },
 	links: { cmd: 'exit', comment: 'come say hi' },
 } satisfies Record<string, Header>;
@@ -168,20 +168,33 @@ export function header(h: Header) {
 }
 
 // ---------------------------------------------------------------------------
+// screenshots, embedded in the cards
+
+const gameImage = (g: Game) => dataUri(join(SRC, 'images/games', `${g.id}.avif`), 630, 500);
+const projectImage = (p: Project) =>
+	dataUri(join(SRC, 'images/projects', `${p.id}.avif`), 960, 540, { fit: p.fit, crop: p.crop });
+
+/** Encodes every card's image ahead of time, so no visitor has to wait on it. */
+export async function warm() {
+	for (const g of data.games) await gameImage(g);
+	for (const p of data.projects) if (!p.art) await projectImage(p);
+}
+
+// ---------------------------------------------------------------------------
 // game cards: cover art + where it was made + how it placed
 
 export async function gameCard(g: Game) {
 	const W = 420, CH = 333, BAR = 58, H = CH + BAR;
 	const cv = new Canvas(W, H, `${g.name}: ${g.event}${g.place ? `, ${g.place}` : ''}`);
-	const img = await dataUri(join(SRC, 'images/games', `${g.id}.webp`), 630, 500);
+	const img = await gameImage(g);
 	let body = `<g clip-path="url(#card)">`;
 	body += `<rect width="${W}" height="${H}" fill="${C.bg}"/>`;
 	body += `<image href="${img}" width="${W}" height="${CH}" preserveAspectRatio="xMidYMid slice"/>`;
 	body += cv.text(g.event, 18, CH + 37, { size: 21, font: 'b', fill: C.fg });
-	if (g.place && g.tier) {
+	if (g.place) {
 		const cs = 19, cw = len(g.place) * cs * ADV + 22, cx = W - 14 - cw;
-		body += `<rect x="${num(cx)}" y="${CH + 13}" width="${num(cw)}" height="32" rx="7" fill="${TIER[g.tier]}"/>`;
-		body += cv.text(g.place, cx + 11, CH + 35, { size: cs, font: 'b', fill: C.black });
+		body += `<rect x="${num(cx)}" y="${CH + 13}" width="${num(cw)}" height="32" rx="7" fill="${g.tier ? TIER[g.tier] : C.edge}"/>`;
+		body += cv.text(g.place, cx + 11, CH + 35, { size: cs, font: 'b', fill: g.tier ? C.black : C.fg });
 	}
 	body += `</g>`;
 	body += `<rect x=".5" y=".5" width="${W - 1}" height="${H - 1}" rx="11.5" fill="none" stroke="${C.edge}"/>`;
@@ -220,7 +233,7 @@ export async function projectCard(p: Project, live: Live) {
 		body += `<rect y="${BAR}" width="${W}" height="${IH}" fill="url(#dots)"/>`;
 		body += `<g shape-rendering="crispEdges">${pixels(sprite, { scale: S, x: Math.round((W - sw) / 2), y: BAR + Math.round((IH - sh) / 2), pal: ART })}</g>`;
 	} else {
-		const img = await dataUri(join(SRC, 'images/projects', `${p.id}.webp`), 960, 540, { fit: p.fit, crop: p.crop });
+		const img = await projectImage(p);
 		body += `<image href="${img}" y="${BAR}" width="${W}" height="${IH}" preserveAspectRatio="xMidYMid slice"/>`;
 	}
 	body += cv.text('>', 26, BAR + IH + 39, { size: 24, font: 'b', fill: C.green });
@@ -228,6 +241,34 @@ export async function projectCard(p: Project, live: Live) {
 	body += `</g>`;
 	body += `<rect x=".5" y=".5" width="${W - 1}" height="${H - 1}" rx="13.5" fill="none" stroke="${C.edge}"/>`;
 	return cv.svg(body, { defs });
+}
+
+// ---------------------------------------------------------------------------
+// honorable mentions: a name and a line or two about it, styled like the link
+// buttons. Sized to sit two across, like the project cards.
+
+/** Splits text into lines of at most `max` characters, at spaces. */
+function wrap(text: string, max: number) {
+	const lines: string[] = [];
+	for (const word of text.split(' ')) {
+		const last = lines.at(-1);
+		if (last !== undefined && len(last) + 1 + len(word) <= max) lines[lines.length - 1] = `${last} ${word}`;
+		else lines.push(word);
+	}
+	return lines;
+}
+
+export function mention(m: Mention) {
+	const W = 800, H = 152, pad = 28, nameSize = 28, size = 24, indent = pad + 2 * nameSize * ADV;
+	const cv = new Canvas(W, H, `${m.name}: ${m.blurb}`);
+	let body = `<rect x="2" y="2" width="${W - 4}" height="${H - 4}" rx="14" fill="${C.bg}"/>`;
+	body += `<rect x="2.5" y="2.5" width="${W - 5}" height="${H - 5}" rx="13.5" fill="none" stroke="${C.edge}" stroke-width="2"/>`;
+	body += cv.text('>', pad, 54, { size: nameSize, font: 'b', fill: C.green });
+	body += cv.text(m.name, indent, 54, { size: nameSize, font: 'b', fill: C.white });
+	const lines = wrap(m.blurb, Math.floor((W - indent - pad) / (size * ADV)));
+	if (lines.length > 2) throw new Error(`"${m.name}" needs a shorter blurb (it takes ${lines.length} lines)`);
+	lines.forEach((line, i) => (body += cv.text(line, indent, 96 + i * 34, { size, fill: C.fg })));
+	return cv.svg(body);
 }
 
 // ---------------------------------------------------------------------------

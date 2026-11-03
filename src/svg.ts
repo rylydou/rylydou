@@ -100,8 +100,8 @@ export type ImageOptions = {
 const images = new Map<string, Promise<string>>();
 
 /**
- * An image file, resized and embedded as a WebP data URI. Resizing is the
- * slow part of drawing a card, so each result is kept until the server restarts.
+ * An image file, resized and embedded as an AVIF data URI. Encoding AVIF is
+ * slow (around a second), so each result is kept until the server restarts.
  */
 export function dataUri(file: string, w: number, h: number, { fit = 'cover', bg = C.bg, crop }: ImageOptions = {}) {
 	const key = JSON.stringify([file, w, h, fit, bg, crop]);
@@ -109,8 +109,8 @@ export function dataUri(file: string, w: number, h: number, { fit = 'cover', bg 
 		const encode = async () => {
 			let img = sharp(await Bun.file(file).bytes());
 			if (crop) img = img.extract({ left: crop[0], top: crop[1], width: crop[2], height: crop[3] });
-			const buf = await img.resize(w, h, { fit, background: bg }).webp({ quality: 86 }).toBuffer();
-			return `data:image/webp;base64,${buf.toString('base64')}`;
+			const buf = await img.resize(w, h, { fit, background: bg }).avif({ quality: 60 }).toBuffer();
+			return `data:image/avif;base64,${buf.toString('base64')}`;
 		};
 		images.set(key, encode().catch(err => (images.delete(key), Promise.reject(err))));
 	}
