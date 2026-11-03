@@ -1,0 +1,22 @@
+{
+	"name": "rylydou-profile",
+	"private": true,
+	"type": "module",
+	"description": "Serves the images on my GitHub profile README",
+	"scripts": {
+		"dev": "bun --hot src/server.ts",
+		"start": "bun src/server.ts",
+		"check": "tsc --noEmit",
+		"deploy": ". ./.env && rsync -rlptz --delete --exclude-from=.dockerignore ./ \"${DEPLOY_HOST:?set DEPLOY_HOST in .env}:${DEPLOY_DIR:?set DEPLOY_DIR in .env}/app/\" && ssh \"$DEPLOY_HOST\" \"cd '$DEPLOY_DIR' && docker compose up -d --build\"",
+		"logs": ". ./.env && ssh \"${DEPLOY_HOST:?set DEPLOY_HOST in .env}\" docker logs -f --tail=100 profile"
+	},
+	"dependencies": {
+		"opentype.js": "1.3.4",
+		"sharp": "^0.35.5"
+	},
+	"devDependencies": {
+		"@types/bun": "^1.4.4",
+		"@types/opentype.js": "^1.3.10",
+		"typescript": "^7.0.2"
+	}
+}

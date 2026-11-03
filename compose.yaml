@@ -1,0 +1,13 @@
+# The Docker stack that serves profile.ryly.dev. Paste this into the stack's
+# compose.yaml once. After that, `bun run deploy` copies the code into the
+# stack's app/ folder and rebuilds, without touching this file.
+services:
+  profile:
+    build: ./app
+    container_name: profile
+    restart: unless-stopped
+    init: true # so `docker stop` doesn't hang waiting for Bun
+    ports:
+      - "8790:3000"
+    environment:
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-} # optional; set it in the stack's .env
